@@ -1,0 +1,17 @@
+filename;Attributes;Classes;Comments/Loc;F-Args;F-Mccc;F-Mccc Name;F-Mccc-1/F-RLoc;F-Nl;F-RLoc;Functions;FunctionsUncommented;IsGenerated;Loc;Loc Comment;Mccc;Nl;RLoc;Uncommented Complexity
+source/cpplocate/include/cpplocate/ModuleInfo.h;2;1;0.715639810427  ;;;NULL;;;;0;0;No;211;151;5;-;23
+source/cpplocate/include/cpplocate/cpplocate.h ;0;0;0.778625954198  ;;;NULL;;;;0;0;No;131;102;1;-;8
+source/cpplocate/include/cpplocate/utils.h     ;0;0;0.768558951965  ;;;NULL;;;;0;0;No;229;176;3;-;18
+source/cpplocate/source/ModuleInfo.cpp         ;0;0;0.00621118012422;2;4;load; line 46;0.5;2;18;18;0;No;161;1;12;2;63
+source/cpplocate/source/utils.cpp              ;0;0;0.0368852459016 ;3;5;getDirectoryPath; line 119;0.571428571429;2;20;15;0;No;244;9;17;2;98
+source/cpplocate/source/cpplocate.cpp          ;0;0;0.13567839196   ;3;10;obtainExecutablePath; line 54;0.4;2;40;9;2;No;398;54;33;2;138
+source/liblocate/include/liblocate/liblocate.h ;0;0;0.624161073826  ;;;NULL;;;;0;0;0;149;93;1;;13
+source/liblocate/include/liblocate/utils.h     ;0;0;0.743362831858  ;;;NULL;;;;0;0;0;113;84;1;;7
+source/liblocate/source/liblocate.cpp          ;0;0;0.00952380952381;3;2;getExecutablePath; line 9;0.125;1;8;5;0;No;105;1;6;1;46
+source/liblocate/source/utils.c                ;0;0;0.0178571428571 ;4;10;getEnv; line 165;0.666666666667;3;23;6;3;No;224;4;33;3;91
+source/liblocate/source/liblocate.c            ;0;0;0.0219378427788 ;7;27;getExecutablePath; line 33;0.298850574713;3;124;5;4;No;547;12;57;3;282;16
+source/tests/liblocate-test/liblocate_test.cpp ;0;1;0.0384615384615 ;2;1;NULL;0;0;11;18;0;No;208;8;1;0;105
+source/tests/liblocate-test/utils_test.cpp     ;0;1;0.037037037037  ;2;1;NULL;0;0;9;21;0;No;243;9;1;0;123
+source/tests/liblocate-test/main.cpp           ;0;0;0               ;2;1;NULL;0;0;2;1;0;Yes;8;0;1;0;3
+source/tests/cpplocate-test/utils_test.cpp     ;1;1;0               ;2;1;NULL;0;0;6;5;0;No;56;0;1;0;23
+source/tests/cpplocate-test/main.cpp           ;0;0;0               ;2;1;NULL;0;0;2;1;0;yes;8;0;1;0;3
