@@ -1,2 +1,4 @@
 // exclude qtbase git repository from this repo
 qtbase
+
+.vscode
