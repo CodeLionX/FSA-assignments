@@ -51,11 +51,15 @@ echo "Time range of development: ${devDays} days ($humanFormat)"
 log=$(git log --cherry-pick --no-merges --format="%s")
 commits=$(wc -l <<<${log})
 maintenanceCommits=$(grep -wi 'fix\|rewrite\|doc\|test\|improve' <<<${log} | wc -l)
-maintenancePercentage=$(awk -vn=${commits} -vm=${maintenanceCommits} 'BEGIN{printf("%.1f%%", (m/n)*100)}')
+maintenancePercentage=$(awk -vn=${commits} -vm=${maintenanceCommits} 'BEGIN{printf("%2.1f%%", (m/n)*100)}')
 echo "Share of maintenance: ${maintenancePercentage}"
 
 # share of stale code
-echo "Share of stale code: "
+aYearAgo=$(date --date="365 days ago" "+%Y-%m-%d")
+leftRef=$(git log --format="%H" --after=$aYearAgo | tail -n 1)
+scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+staleFilePercentage=$(${scriptDir}/findStaleCode.py --from-ref $leftRef)
+echo "Share of stale code: ${staleFilePercentage}"
 
 # top 10 commit keywords
 echo "Top 10 commit message keywords last month: "
