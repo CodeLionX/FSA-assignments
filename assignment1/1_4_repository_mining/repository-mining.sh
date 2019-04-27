@@ -8,12 +8,12 @@ function formatDays() {
     local devMonths=$(( devRestDays / 30 ))
     local devRestDays=$(( devRestDays - (devMonths * 30) ))
 
-    [[ ${devYears} != 0 ]]    && {
+    [[ ${devYears} != 0 ]] && {
         unit="years"
         [[ ${devMonths} == 1 ]] && unit="year"
         yearInfo="${devYears} ${unit}"
     }
-    [[ ${devMonths} != 0 ]]   && {
+    [[ ${devMonths} != 0 ]] && {
         unit="months"
         [[ ${devMonths} == 1 ]] && unit="month"
         monthInfo="${devMonths} ${unit}"

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import argparse
 import sys
 import subprocess
@@ -13,7 +13,8 @@ def main(from_ref, working_dir):
         cwd=working_dir
     )
     output, _ = process1.communicate()
-    allFiles = [filename[2:] for filename in output.split("\n")]
+    # strip first two chars './' added by the find tool
+    allFiles = [filename[2:] for filename in output.decode().split("\n")]
 
     # find all files that changed from the provided git ref (commit-sha, branch, ...)
     # use -l to increase threshold of file candidates for rename detection
@@ -24,16 +25,13 @@ def main(from_ref, working_dir):
         cwd=working_dir
     )
     output2, _ = process2.communicate()
-
-    namedict = {}
-    for name in output2.split("\n"):
-        namedict[name] = True
+    nameset = set(output2.decode().split("\n"))
 
     # collect only those files, that have not changed (are not in the diff)
-    stales = [name for name in allFiles if name not in namedict]
+    stales = [name for name in allFiles if name not in nameset]
 
-    # calculate percentage
-    print "%2.1f%%" % (len(stales) / float(len(allFiles)) * 100)
+    # calculate and output percentage
+    print("%2.1f%%" % (len(stales) / float(len(allFiles)) * 100))
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import sys
 
 
@@ -13,7 +13,7 @@ def main():
         namedict[name].add(mail)
 
     for name, mail_list in sorted(namedict.items()):
-        print name, " ".join(mail_list)
+        print(name, " ".join(mail_list))
 
 if __name__ == "__main__":
     main()
