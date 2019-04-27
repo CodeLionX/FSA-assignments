@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import sys
 
+
 def main():
     namedict = {}
     for line in sys.stdin:
@@ -8,11 +9,11 @@ def main():
         # if first time: init list
         if name not in namedict:
             namedict[name] = set()
-        
+
         namedict[name].add(mail)
-    
-    for name, mailList in sorted(namedict.items()):
-        print name, " ".join(mailList)
+
+    for name, mail_list in sorted(namedict.items()):
+        print name, " ".join(mail_list)
 
 if __name__ == "__main__":
     main()
