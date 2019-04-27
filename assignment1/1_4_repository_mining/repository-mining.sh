@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 function formatDays() {
     local devRestDays=$1
     local devYears=$(( devRestDays / 365 ))
@@ -37,7 +39,7 @@ echo "Number of authors: ${n_authors}"
 
 # most active author
 aYearAgo=$(date --date="365 days ago" "+%Y-%m-%d")
-mostActive=$(git log --format="%an <%ae>" --after=$aYearAgo | sort | uniq -c | sort -n | tail -n 1 | sed 's/^ *[0-9]* //')
+mostActive=$(git log --format="%an <%ae>" --after=${aYearAgo} | sort | uniq -c | sort -n | tail -n 1 | sed 's/^ *[0-9]* //')
 echo "Most active author within last year: ${mostActive}"
 
 # development time
@@ -56,10 +58,11 @@ echo "Share of maintenance: ${maintenancePercentage}"
 
 # share of stale code
 aYearAgo=$(date --date="365 days ago" "+%Y-%m-%d")
-leftRef=$(git log --format="%H" --after=$aYearAgo | tail -n 1)
-scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-staleFilePercentage=$(${scriptDir}/findStaleCode.py --from-ref $leftRef)
+leftRef=$(git log --format="%H" --since=${aYearAgo} | tail -n 1)
+staleFilePercentage=$(${scriptDir}/findStaleCode.py --from-ref ${leftRef})
 echo "Share of stale code: ${staleFilePercentage}"
 
 # top 10 commit keywords
-echo "Top 10 commit message keywords last month: "
+aMonthAgo=$(date --date="30 days ago" "+%Y-%m-%d")
+keywords=$(git log --format="%s" --since=${aMonthAgo} | ${scriptDir}/top10keywords.py)
+echo "Top 10 commit message keywords last month: ${keywords}"
