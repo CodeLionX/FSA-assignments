@@ -5,7 +5,10 @@ import csv
 from operator import itemgetter
 
 delimiter = ' | '
-artSymbol = '+'  # preferrably just one char
+artSymbol = '█'  # preferrably just one char
+# others: █ # ▇ ⬛ ■ ●
+# change to '+' if terminal does not support UTF-8
+# artSymbol = '+'
 
 
 def main(width, attribute, sort_order, limit, flat):
