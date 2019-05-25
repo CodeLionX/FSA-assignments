@@ -1,4 +1,5 @@
-// exclude qtbase git repository from this repo
+// exclude git repositories from this repo that are used for mining
 qtbase
+Vulkan
 
 .vscode
