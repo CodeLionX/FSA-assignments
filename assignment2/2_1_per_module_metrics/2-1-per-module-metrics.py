@@ -11,6 +11,8 @@ from datetime import date
 
 # configuration
 use_git_root_for_command_db_file = True
+float_precision = 2
+float_precision = str(float_precision)
 
 
 # helper functions
@@ -141,7 +143,6 @@ def get_identifiers_from(filename):
         "xor_eq"
     ]
     code = ""
-    print("reading file", filename)
     with open(filename, "r", encoding='latin1') as f:
         for line in f:
             code += line
@@ -198,9 +199,19 @@ def main():
         identifiers = get_identifiers_from(f)
         n_all = len(identifiers)
         n_vk = sum([1 for symbol in identifiers if symbol.startswith("vk")])
-        sovkc = n_vk / n_all
+        if n_all and n_vk:
+            sovkc = n_vk / n_all
+        else:
+            sovkc = None
 
-        metrics.append([f, mtbc, noc, bf, osploc, sovkc])
+        metrics.append([
+            f,
+            "{:d}".format(int(mtbc)) if mtbc else None,
+            "{:d}".format(int(noc)) if noc else None,
+            "{:.{prec}f}".format(bf, prec=float_precision) if bf else None,
+            "{:.{prec}f}".format(osploc, prec=float_precision) if osploc else None,
+            "{:.{prec}f}".format(sovkc, prec=float_precision) if sovkc else None
+        ])
 
     writer = csv.writer(sys.stdout, delimiter=';')
     writer.writerow(["filename", "MTBC", "NoC", "BF", "OSpLoC", "SoVkC"])
@@ -209,3 +220,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # identifiers = get_identifiers_from("external/gli/test/core.cpp")
+    # n_all = len(identifiers)
+    # n_vk = sum([1 for symbol in identifiers if symbol.startswith("vk")])
+    # print(identifiers, n_all, n_vk)
