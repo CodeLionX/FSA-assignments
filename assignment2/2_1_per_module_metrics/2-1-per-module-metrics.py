@@ -38,7 +38,7 @@ def ensure_ending_slash(path):
 
 
 def count_lines(filename):
-    with open(filename, "r") as f:
+    with open(filename, "r", encoding='latin1') as f:
         for i, _ in enumerate(f, 1):
             pass
     return i
@@ -115,6 +115,44 @@ def get_last_year_revisions(filename):
     return [r.split(sep) for r in revisions if r]
 
 
+def get_identifiers_from(filename):
+    # identifier pattern:
+    # - consists of alpha-numeric characters and underscores
+    # - must start with a letter or underscore (no digit)
+    # this does detect text in comments as symbols
+    pattern = r'[a-zA-Z_][a-zA-Z0-9_]*'
+    # filter out C++ keywords: https://en.cppreference.com/w/cpp/keyword
+    keywords = [
+        "alignas", "alignof", "and", "and_eq", "asm", "atomic_cancel",
+        "atomic_commit", "atomic_noexcept", "auto", "bitand", "bitor", "bool",
+        "break", "case", "catch", "char", "char8_t", "char16_t", "char32_t",
+        "class", "compl", "concept", "const", "consteval", "constexpr",
+        "const_cast", "continue", "co_await", "co_return", "co_yield",
+        "decltype", "default", "delete", "do", "double", "dynamic_cast",
+        "else", "enum", "explicit", "export", "extern", "false", "float",
+        "for", "friend", "goto", "if", "inline", "int", "long", "mutable",
+        "namespace", "new", "noexcept", "not", "not_eq", "nullptr", "operator",
+        "or", "or_eq", "private", "protected", "public", "reflexpr",
+        "register", "reinterpret_cast", "requires", "return", "short",
+        "signed", "sizeof", "static", "static_assert", "static_cast", "struct",
+        "switch", "synchronized", "template", "this", "thread_local", "throw",
+        "true", "try", "typedef", "typeid", "typename", "union", "unsigned",
+        "using", "virtual", "void", "volatile", "wchar_t", "while", "xor",
+        "xor_eq"
+    ]
+    code = ""
+    print("reading file", filename)
+    with open(filename, "r", encoding='latin1') as f:
+        for line in f:
+            code += line
+    identifiers = re.findall(pattern, code)
+    return [
+        symbol.lower()
+        for symbol in identifiers
+        if symbol.lower() not in keywords
+    ]
+
+
 def main():
     # find all files in repo
     filenames = find_source_code_files()
@@ -157,7 +195,10 @@ def main():
             osploc = object_size / loc
 
         # metric 5: SoVkC
-        sovkc = None
+        identifiers = get_identifiers_from(f)
+        n_all = len(identifiers)
+        n_vk = sum([1 for symbol in identifiers if symbol.startswith("vk")])
+        sovkc = n_vk / n_all
 
         metrics.append([f, mtbc, noc, bf, osploc, sovkc])
 
