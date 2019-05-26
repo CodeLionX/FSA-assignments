@@ -10,36 +10,60 @@ from datetime import timedelta
 from datetime import date
 
 # configuration
-include_files_from_submodules = True
+use_git_root_for_command_db_file = True
 
 
-def find_source_code_files():
-    working_dir = "."
-    git_lsfiles_command = 'git ls-files' + (
-        ' --recurse-submodules' if include_files_from_submodules else ''
+# helper functions
+def run_command(command, multiline_output=True):
+    command = command if isinstance(command, list) else command.split()
+    process = subprocess.Popen(
+        command,
+        stdout=subprocess.PIPE
     )
+    output, _ = process.communicate()
+    text = output.decode()
+    return text.split("\n") if multiline_output else text.strip()
+
+
+def git_root():
+    return run_command("git rev-parse --show-toplevel", multiline_output=False)
+
+
+def mean(l):
+    return float(sum(l) / max(len(l), 1))
+
+
+def ensure_ending_slash(path):
+    return path if path.endswith("/") else path + "/"
+
+
+def count_lines(filename):
+    with open(filename, "r") as f:
+        for i, _ in enumerate(f, 1):
+            pass
+    return i
+
+
+# heavy lifting functions
+def find_source_code_files():
+    output = run_command('find . -type f')
     # source code file pattern
     pattern = r'.*\.h$|.*\.hpp$|.*\.c$|.*\.cpp$'
 
-    git_process = subprocess.Popen(
-        git_lsfiles_command.split(),
-        stdout=subprocess.PIPE,
-        cwd=working_dir
-    )
-    output, _ = git_process.communicate()
-    sourceFiles = output.decode().split("\n")
+    # strip first two chars './' added by the find tool
+    sourceFiles = [line[2:] for line in output]
     return list(filter(lambda f: re.fullmatch(pattern, f), sourceFiles))
 
 
 def load_mapping_from_compile_command_db():
-    compile_command_db_file = "compile_commands.json"
+    root_folder = git_root() if use_git_root_for_command_db_file else "."
+    compile_command_db_file = os.path.join(root_folder, "compile_commands.json")
     if not os.path.isfile(compile_command_db_file):
         print("no compile command db file found!!")
         return {}
 
     # current working dir for path rewriting
-    cwd = os.getcwd()
-    cwd = cwd if cwd.endswith("/") else cwd + "/"
+    cwd = ensure_ending_slash(os.getcwd())
 
     # configure argument parser for compile commands
     parser = argparse.ArgumentParser()
@@ -62,8 +86,7 @@ def load_mapping_from_compile_command_db():
         commands = [(obj['command'], obj['directory']) for obj in compiler_info]
         for command, directory in commands:
             args, _ = parser.parse_known_args(command.split())
-            directory = directory if directory.endswith("/") else directory + "/"
-            object_name = directory + args.object_name
+            object_name = os.path.join(directory, args.object_name)
             input_filename = args.input_file.replace(cwd, "")
 
             mapping[input_filename] = object_name
@@ -72,23 +95,24 @@ def load_mapping_from_compile_command_db():
 
 
 def get_last_year_revisions(filename):
-    working_dir = "."
-    git_log_command = [
-        'git', 'log', '--pretty=%at;%ae', '--since="365 days"', filename
-    ]
-
-    git_process = subprocess.Popen(
-        git_log_command,
-        stdout=subprocess.PIPE,
-        cwd=working_dir
+    sep = ";"
+    # timestamp of last commit in HEAD
+    last_commit_unix_timestamp = run_command(
+        "git log --pretty=%at -1",
+        multiline_output=False
     )
-    output, _ = git_process.communicate()
-    revisions = output.decode().split("\n")
-    return [r.split(';') for r in revisions if r]
+    last_commit_timestamp = date.fromtimestamp(int(last_commit_unix_timestamp))
+    # consider commits since last commit - 365 days
+    delta = timedelta(days=-365)
+    since = last_commit_timestamp + delta
 
-
-def mean(l):
-    return float(sum(l) / max(len(l), 1))
+    git_log_command = [
+        'git', 'log', '--pretty=%at' + sep + '%ae',
+        '--since="{}"'.format(since.isoformat()),
+        filename
+    ]
+    revisions = run_command(git_log_command)
+    return [r.split(sep) for r in revisions if r]
 
 
 def main():
@@ -125,13 +149,12 @@ def main():
             bf = None
 
         # metric 4: OSpLoC
+        osploc = None
         if f in mapping:
             object_name = mapping[f]
             object_size = os.path.getsize(object_name)
             loc = count_lines(f)
             osploc = object_size / loc
-        else:
-            osploc = None
 
         # metric 5: SoVkC
         sovkc = None
@@ -141,13 +164,6 @@ def main():
     writer = csv.writer(sys.stdout, delimiter=';')
     writer.writerow(["filename", "MTBC", "NoC", "BF", "OSpLoC", "SoVkC"])
     writer.writerows(metrics)
-
-
-def count_lines(filename):
-    with open(filename, "r") as f:
-        for i, _ in enumerate(f, 1):
-            pass
-    return i
 
 
 if __name__ == "__main__":
