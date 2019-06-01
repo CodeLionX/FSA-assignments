@@ -1,5 +1,6 @@
 // exclude git repositories from this repo that are used for mining
 qtbase
 Vulkan
+pytorch
 
 .vscode
