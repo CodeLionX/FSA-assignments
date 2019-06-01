@@ -83,7 +83,7 @@ def load_mapping_from_compile_command_db():
     # result dict
     mapping = {}
 
-    with open(compile_command_db_file, 'r') as inputfile:
+    with open(compile_command_db_file, 'r', encoding='latin1') as inputfile:
         compiler_info = json.load(inputfile)
         commands = [(obj['command'], obj['directory']) for obj in compiler_info]
         for command, directory in commands:
@@ -157,7 +157,7 @@ def get_identifiers_from(filename):
 def main():
     # find all files in repo
     filenames = find_source_code_files()
-    # load compile mapping
+    # load compile mapping (returns the last found object name for each input file)
     mapping = load_mapping_from_compile_command_db()
 
     # create metric list
@@ -220,7 +220,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # identifiers = get_identifiers_from("external/gli/test/core.cpp")
-    # n_all = len(identifiers)
-    # n_vk = sum([1 for symbol in identifiers if symbol.startswith("vk")])
-    # print(identifiers, n_all, n_vk)
