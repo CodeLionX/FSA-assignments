@@ -1,10 +1,10 @@
-21 validation.cpp
-13 net_processing.cpp
-12 wallet.cpp
-10 rpcwallet.cpp
-10 wallet.h
-9 init.cpp
-8 validation.h (bitcoin/src/consensus)
-7 validation.h (bitcoin/src)
-5 wallet_balance.py
-5 tx-verify.cpp
+bitcoin/src/wallet/wallet.cpp 77
+bitcoin/src/wallet/rpcwallet.cpp 67
+bitcoin/src/validation.cpp 55
+bitcoin/src/rpc/rawtransaction.cpp 50
+bitcoin/src/wallet/wallet.h 45
+bitcoin/src/init.cpp 43
+bitcoin/src/wallet/rpcdump.cpp 39
+bitcoin/src/interfaces/chain.cpp 37
+bitcoin/src/interfaces/chain.h 35
+bitcoin/src/net_processing.cpp 29
