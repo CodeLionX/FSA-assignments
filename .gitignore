@@ -2,5 +2,6 @@
 qtbase
 Vulkan
 pytorch
+webgl-operate
 
 .vscode
