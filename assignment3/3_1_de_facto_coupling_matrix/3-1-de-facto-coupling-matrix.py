@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 import argparse
 import subprocess
+import math
 from datetime import timedelta
 from datetime import date
 
 try:
     import matplotlib.pyplot as plt
+    from matplotlib.colors import Normalize, LogNorm
 except ImportError:
     print("ERROR - this script requires matplotlib")
     print("      - install it using pip via 'pip3 install matplotlib'")
@@ -71,7 +73,7 @@ def load_all_commits():
         commits_per_day[timestamp].append(i)
 
         i += 1
-    return commits, files, commits_per_day, commits_per_hash
+    return commits, sorted(list(files)), commits_per_day, commits_per_hash
 
 
 def init_cooccurrence_matrix(files, value=0):
@@ -83,27 +85,50 @@ def init_cooccurrence_matrix(files, value=0):
     return matrix
 
 
-def plot():
-    # use plt.pcolormesh(X, Y, C)
-    pass
+def plot(c, clip):
+    # clip to max 25 occurences as highest value (for color)
+    if clip:
+        v_max = 25
+        v_min = 0
+        data = [
+            [c[name1][name2] for name2 in c[name1]]
+            for name1 in c
+        ]
+    else:
+        v_max = 0
+        v_min = math.inf
+        data = []
+        for name1 in c:
+            row = []
+            for name2 in c[name1]:
+                value = c[name1][name2]
+                if value > v_max:
+                    v_max = value
+                if value < v_min:
+                    v_min = value
+                row.append(value)
+            data.append(row)
 
+    norm = Normalize(vmin=v_min, vmax=v_max, clip=clip)
+    #norm = LogNorm(vmin=v_min + 1, vmax=v_max, clip=False)
 
-def plot_scatter(c):
-    data = [
-        [c[name1][name2] for name2 in c[name1]]
-        for name1 in c
-    ]
     fig = plt.figure()
-    plt.pcolormesh(data)
-    #plt.xticks(range(max(x)+1))
-    #plt.xlabel("Number of Parameters")
-    #plt.ylabel("Lines of Code")
-    #plt.close()
-    plt.show()
+    plt.imshow(data, cmap=plt.cm.YlGn, norm=norm)
+
+    labels = [name for name in c]
+    ticks = range(len(labels))
+    plt.xticks(ticks, labels, ma="center", rotation="vertical")
+    plt.yticks(ticks, labels, ma="center", va="center")
+
+    cb = plt.colorbar()
+    cb.set_label("Number of conjunct changes")
+    plt.close()
+    #plt.show()
+
     return fig
 
 
-def main(output):
+def main(output, clip):
     commits, files, day_index, hash_index = load_all_commits()
     matrix = init_cooccurrence_matrix(files)
 
@@ -115,23 +140,25 @@ def main(output):
 
         # iterate over time window [-deltaDays; +deltaDays]
         other_files = []
-        for x in range(-deltaDays, + deltaDays + 1):
+        for x in range(- deltaDays, + deltaDays + 1):
             date = current_timestamp + timedelta(days=x)
             try:
                 others = day_index[date]
                 for i in others:
                     other_commit = commits[i]
-                    if other_commit.author == current_author:
+                    if other_commit.hash != current.hash and other_commit.author == current_author:
                         for filename in other_commit.filenames:
                             other_files.append(filename)
             except KeyError:
-                continue
+                pass
 
         for file1 in current_files:
-            for file2 in other_files:
+            for file2 in set(other_files):
                 matrix[file1][file2] += 1
 
-    plot_scatter(matrix)
+    fig = plot(matrix, clip)
+    fig.savefig(output, bbox_inches="tight")
+    print("Figure saved to", output)
 
 
 if __name__ == "__main__":
@@ -143,5 +170,11 @@ if __name__ == "__main__":
         default='output.pdf'
     )
 
+    parser.add_argument('--no-clip',
+        help='disable color mapping clipping',
+        action='store_true',
+        dest='noclip'
+    )
+
     args = parser.parse_args()
-    main(args.output)
+    main(args.output, not args.noclip)
