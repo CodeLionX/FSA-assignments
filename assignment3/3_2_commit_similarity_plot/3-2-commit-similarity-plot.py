@@ -74,36 +74,18 @@ def load():
             )
         )
         commits.append((author, "\n".join(lines)))
-    return list(commits)
-
-
-def build_vocabulary(commits):
-    terms = [
-        term
-        for _, lines in commits
-        for line in lines
-        for term in re.findall(token_pattern, line)
-    ]
-    term_tf = {}
-    for term in terms:
-        if term not in term_tf:
-            term_tf[term] = 0
-        term_tf[term] += 1
-    term_tf = [(term, term_tf[term]) for term in term_tf]
-    top_256_terms = list(sorted(term_tf, key=itemgetter(1), reverse=True))[:256]
-    return map(itemgetter(0), top_256_terms)
+    return commits
 
 
 def plot_scatter(points, authors):
     x = list(map(itemgetter(0), points))
     y = list(map(itemgetter(1), points))
 
-    color_mapping = list(set(authors))
+    color_mapping = sorted(set(authors), reverse=True)
     c = [float(color_mapping.index(author)) for author in authors]
-    print(color_mapping)
+    norm = Normalize(vmin=0, vmax=len(color_mapping)-1, clip=False)
 
     fig = plt.figure()
-    norm = Normalize(vmin=0, vmax=len(color_mapping)-1, clip=False)
     plt.scatter(
         x,
         y,
@@ -113,33 +95,31 @@ def plot_scatter(points, authors):
         cmap=plt.cm.Set1,
         norm=norm
     )
-    #plt.xticks(range(max(x)+1))
 
     cb = plt.colorbar()
     cb.set_label("authors")
     cb.set_ticks(range(len(color_mapping)))
     cb.set_ticklabels(color_mapping)
-    plt.show()
-    #plt.close()
+    #plt.show()
+    plt.close()
     return fig
 
 
 def main(output):
     commits = load()
-    corpus = [text for _, text in commits]
+    corpus = (text for _, text in commits)
+    authors = [author for author, _ in commits]
     cv = CountVectorizer(
         analyzer="word",
         token_pattern=token_pattern,
         max_features=256
     )
     X = cv.fit_transform(corpus)
-    vocabulary = cv.get_feature_names()
-
 
     svd = TruncatedSVD(n_components=2, random_state=random_seed, n_iter=10)
     Y = svd.fit_transform(X)
 
-    fig = plot_scatter(Y, [author for author, _ in commits])
+    fig = plot_scatter(Y, authors)
     fig.savefig(output, bbox_inches="tight")
     print("Figure saved to", output)
 
