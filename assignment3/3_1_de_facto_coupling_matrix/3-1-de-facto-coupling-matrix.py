@@ -176,7 +176,7 @@ if __name__ == "__main__":
         type=str,
         nargs='?',
         help='output filename',
-        default='output.pdf'
+        default='result.pdf'
     )
 
     parser.add_argument('--no-clip', '-c',

@@ -105,7 +105,7 @@ def plot_scatter(points, authors):
     return fig
 
 
-def main(output):
+def main(output, sparse):
     commits = load()
     corpus = (text for _, text in commits)
     authors = [author for author, _ in commits]
@@ -116,8 +116,13 @@ def main(output):
     )
     X = cv.fit_transform(corpus)
 
-    svd = TruncatedSVD(n_components=2, random_state=random_seed, n_iter=10)
-    Y = svd.fit_transform(X)
+    if sparse:
+        # PCA does not support sparse input, so use the alternative:
+        svd = TruncatedSVD(n_components=2, random_state=random_seed, n_iter=10)
+        Y = svd.fit_transform(X)
+    else:
+        pca = PCA(n_components=2, random_state=random_seed)
+        Y = pca.fit_transform(X.toarray())
 
     fig = plot_scatter(Y, authors)
     fig.savefig(output, bbox_inches="tight")
@@ -133,5 +138,11 @@ if __name__ == "__main__":
         default='result.pdf'
     )
 
+    parser.add_argument('--sparse', '-s',
+        help='use sparse data and TruncatedSVD',
+        action='store_true',
+        dest='sparse'
+    )
+
     args = parser.parse_args()
-    main(args.output)
+    main(args.output, args.sparse)
