@@ -3,6 +3,7 @@ import argparse
 import subprocess
 import math
 import sys
+import re
 from datetime import timedelta
 from datetime import date
 
@@ -16,6 +17,7 @@ except ImportError:
     sys.exit(1)
 
 deltaDays = 3
+sourcecode_pattern = r'.*\.ts$|.*\.tsx$|.*\.js$|.*\.jsx$'
 
 
 class Commit:
@@ -37,7 +39,7 @@ def run_command(command, multiline_output=True, separator="\n"):
     return text.split(separator) if multiline_output else text.strip()
 
 
-def load_all_commits():
+def load_all_commits(filter_files):
     commit_sep = "==="
     value_sep = ";"
     command = [
@@ -59,6 +61,11 @@ def load_all_commits():
         hexhash, author, timestamp = lines[0].split(value_sep)
         timestamp = date.fromtimestamp(int(timestamp))
         filenames = [lines[j] for j in range(1, len(lines)) if lines[j]]
+        if filter_files:
+            filenames = list(filter(
+                lambda f: re.fullmatch(sourcecode_pattern, f),
+                filenames
+            ))
         commits.append(Commit(
             hexhash,
             author,
@@ -87,9 +94,9 @@ def init_cooccurrence_matrix(files, value=0):
 
 
 def plot(c, clip):
-    # clip to max 25 occurences as highest value (for color)
+    # clip to max 30 occurrences as highest value (for color mapping)
     if clip:
-        v_max = 25
+        v_max = 30
         v_min = 0
         data = [
             [c[name1][name2] for name2 in c[name1]]
@@ -129,8 +136,8 @@ def plot(c, clip):
     return fig
 
 
-def main(output, clip):
-    commits, files, day_index, hash_index = load_all_commits()
+def main(output, clip, filter_files):
+    commits, files, day_index, hash_index = load_all_commits(filter_files)
     matrix = init_cooccurrence_matrix(files)
 
     for index, commithash in enumerate(hash_index):
@@ -154,8 +161,9 @@ def main(output, clip):
                 pass
 
         for file1 in current_files:
-            for file2 in set(other_files):
-                matrix[file1][file2] += 1
+            for file2 in other_files + current_files:
+                if file1 != file2:
+                    matrix[file1][file2] += 1
 
     fig = plot(matrix, clip)
     fig.savefig(output, bbox_inches="tight")
@@ -171,11 +179,17 @@ if __name__ == "__main__":
         default='output.pdf'
     )
 
-    parser.add_argument('--no-clip',
+    parser.add_argument('--no-clip', '-c',
         help='disable color mapping clipping',
         action='store_true',
         dest='noclip'
     )
 
+    parser.add_argument('--no-filter-files', '-f',
+        help='disable color mapping clipping',
+        action='store_true',
+        dest='no_filter_files'
+    )
+
     args = parser.parse_args()
-    main(args.output, not args.noclip)
+    main(args.output, not args.noclip, not args.no_filter_files)
