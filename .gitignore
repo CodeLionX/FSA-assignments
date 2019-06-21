@@ -3,5 +3,6 @@ qtbase
 Vulkan
 pytorch
 webgl-operate
+uBlock
 
 .vscode
