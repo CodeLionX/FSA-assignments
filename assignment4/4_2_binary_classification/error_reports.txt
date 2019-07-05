@@ -1,0 +1,7 @@
+logistic-regression error report
+train error: 17.73%
+prediction error: 40.00%
+
+support-vector-machine error report
+train error: 0.71%
+prediction error: 25.00%
