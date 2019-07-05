@@ -2,6 +2,7 @@
 import argparse
 import subprocess
 import re
+import sys
 from datetime import timedelta
 from datetime import date
 
@@ -135,6 +136,14 @@ def parse_raw_commit(raw_commit, value_sep, filter_files):
             filenames
         ))
     if not filenames:
+        print(
+            "WARN: ignoring commit from author",
+            author,
+            "on",
+            timestamp.isoformat(),
+            "- no source files changed by commit",
+            file=sys.stderr
+        )
         return None
     return Commit(
         author,
