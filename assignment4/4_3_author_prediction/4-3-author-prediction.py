@@ -9,25 +9,25 @@ try:
     from sklearn.manifold import TSNE
     from joblib import dump, load
 except ImportError:
-    print("ERROR - this script requires sklearn")
-    print("      - install it using pip via 'pip3 install scikit-learn'")
+    print("ERROR - this script requires sklearn", file=sys.stderr)
+    print("      - install it using pip via 'pip3 install scikit-learn'", file=sys.stderr)
     exit(1)
 
 try:
     from scipy.spatial import Voronoi, Delaunay, voronoi_plot_2d
     from scipy.spatial.distance import euclidean
 except ImportError:
-    print("ERROR - this script requires scipy")
-    print("      - install it using pip via 'pip3 install numpy scipy'")
+    print("ERROR - this script requires scipy", file=sys.stderr)
+    print("      - install it using pip via 'pip3 install numpy scipy'", file=sys.stderr)
     print("      - you can also use your preferred package manager, " +
-          "e.g. 'sudo apt install python3-numpy python3-scipy'")
+          "e.g. 'sudo apt install python3-numpy python3-scipy'", file=sys.stderr)
     exit(1)
 
 
 # debug settings
 show_embedding_plot = False
 show_voronoi_plot = False
-testing_filter = "--since='365 days'"
+# testing_filter = "--since='100 days'"
 testing_filter = None
 # configuration
 vectorizer_filename = "CountVectorizer.joblib"
@@ -41,9 +41,9 @@ def plot_embeddings(author_embeddings, authors, file_embeddings, filenames):
     try:
         import matplotlib.pyplot as plt
     except ImportError:
-        print("ERROR - this script requires matplotlib")
-        print("      - install it using pip via 'pip3 install matplotlib'")
-        print("      - you can also use your preferred package manager, e.g. 'apt install python3-matplotlib'")
+        print("ERROR - this script requires matplotlib", file=sys.stderr)
+        print("      - install it using pip via 'pip3 install matplotlib'", file=sys.stderr)
+        print("      - you can also use your preferred package manager, e.g. 'apt install python3-matplotlib'", file=sys.stderr)
         exit(1)
 
     data = np.concatenate(
@@ -81,9 +81,9 @@ def plot_voronoi_neighbors(voro, query_points, neighbors):
     try:
         import matplotlib.pyplot as plt
     except ImportError:
-        print("ERROR - this script requires matplotlib")
-        print("      - install it using pip via 'pip3 install matplotlib'")
-        print("      - you can also use your preferred package manager, e.g. 'apt install python3-matplotlib'")
+        print("ERROR - this script requires matplotlib", file=sys.stderr)
+        print("      - install it using pip via 'pip3 install matplotlib'", file=sys.stderr)
+        print("      - you can also use your preferred package manager, e.g. 'apt install python3-matplotlib'", file=sys.stderr)
         exit(1)
 
     # plot voronoi diagram
@@ -119,14 +119,14 @@ def read_file(filename):
         with open(filename, 'r', encoding=encoding) as file:
             return file.read()
     except UnicodeDecodeError:
-        print(filename, "is not encoded in", encoding)
-        print("  Falling back to UTF-8 ...")
+        print(filename, "is not encoded in", encoding, file=sys.stderr)
+        print("  Falling back to UTF-8 ...", file=sys.stderr)
         try:
             with open(filename, 'r', encoding="utf-8") as file:
                 return file.read()
-            print("  ...successful")
+            print("  ...successful", file=sys.stderr)
         except UnicodeDecodeError:
-            print("  ...failed. Skipping file.")
+            print("  ...failed. Skipping file.", file=sys.stderr)
             return
 
 
@@ -145,7 +145,7 @@ def load_changes():
     if testing_filter:
         command.append(testing_filter)
 
-    print("Running command:", " ".join(command))
+    print("Running command:", " ".join(command), file=sys.stderr)
     result = run_command(command, multiline_output=True, separator=commit_sep)
 
     git_exclude_prefixes = [
@@ -156,7 +156,7 @@ def load_changes():
         "@@", "@@@"
     ]
 
-    print("Received results, building dict")
+    print("Received results, building dict", file=sys.stderr)
     changes_per_author = {}
     for commit in result:
         if not commit:
@@ -174,7 +174,7 @@ def load_changes():
             changes_per_author[author] = []
         for line in lines:
             changes_per_author[author].append(line)
-    print("Dictionary created, authors:", len(changes_per_author))
+    print("Dictionary created, authors:", len(changes_per_author), file=sys.stderr)
     return changes_per_author
 
 
@@ -184,13 +184,14 @@ def init():
         os.path.exists(author_embeddings_filename)
     ):
         # load vectorizer and author embeddings from dump
-        print("Loading vectorizer and embeddings")
+        print("Loading vectorizer and embeddings", file=sys.stderr)
         vectorizer = load(vectorizer_filename)
         authors, author_embeddings = load(author_embeddings_filename)
     else:
         # build corpus
-        print("No existing vectorizer and embeddings found, creating new...")
+        print("No existing vectorizer and embeddings found, creating new...", file=sys.stderr)
         changes_per_author = load_changes()
+        print("Creating vectorizer and bag of words repr. for authors", file=sys.stderr)
         authors = sorted(changes_per_author.keys())
         corpus = [
             "\n".join(changes_per_author[author])
@@ -204,6 +205,11 @@ def init():
         )
         author_embeddings = vectorizer.fit_transform(corpus).toarray()
         # dump vectorizer and author embeddings to file
+        print(
+            "Saving vectorizer and author vector representation to disk:",
+            vectorizer_filename, author_embeddings_filename,
+            file=sys.stderr
+        )
         dump(vectorizer, vectorizer_filename)
         dump((authors, author_embeddings), author_embeddings_filename)
     return vectorizer, authors, author_embeddings
@@ -225,11 +231,13 @@ def embed_with_tsne(author_vecs, file_vecs):
 
     print(
         "Using t-SNE to reduce dims of authors:",
-        author_vecs.shape, "-->", author_embeddings.shape
+        author_vecs.shape, "-->", author_embeddings.shape,
+        file=sys.stderr
     )
     print(
         "Using t-SNE to reduce dims of files:",
-        file_vecs.shape, "-->", file_embeddings.shape
+        file_vecs.shape, "-->", file_embeddings.shape,
+        file=sys.stderr
     )
     return author_embeddings, file_embeddings
 
@@ -278,17 +286,18 @@ def main():
     if show_embedding_plot:
         plot_embeddings(author_embeddings, authors, file_embeddings, filenames)
 
-    print("Building voronoi diagram")
+    print("Building voronoi diagram", file=sys.stderr)
     voro = Voronoi(
         author_embeddings,
         incremental=False
     )
-    print("Finding nearest neighbors")
+    print("Finding nearest neighbors", file=sys.stderr)
     neighbors = find_nearest_neighbors(voro, file_embeddings)
 
     if show_voronoi_plot:
         plot_voronoi_neighbors(voro, file_embeddings, neighbors)
 
+    print("Finished. Printing result to stdout", file=sys.stderr)
     for filename, neighbor in zip(filenames, neighbors):
         index = np.where(author_embeddings == neighbor)[0][0]
         author = authors[index]
