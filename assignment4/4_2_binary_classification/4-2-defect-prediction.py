@@ -33,13 +33,19 @@ def read_arff_file(filename):
 
     # select labels
     labels = np_data[:, -1]
-    return (features, labels)
+    return features, labels
 
 
 def output_errors(classifier, train_error, prediction_error):
-    print(classifier, "error report")
-    print("train error: {:.2f}%".format(float(train_error)*100))
-    print("prediction error: {:.2f}%".format(float(prediction_error)*100))
+    if classifier == "logistic-regression":
+        name = "Logistic regression "
+    elif classifier == "support-vector-machine":
+        name = "Support vector machine"
+    else:
+        name = classifier
+    print(name, "error report")
+    print("train error: {:.0f}%".format(float(train_error)*100))
+    print("prediction error: {:.0f}%".format(float(prediction_error)*100))
 
 
 def output_predictions(y):
@@ -54,8 +60,7 @@ def main(train_file, predict_file, classifier, output_error):
             solver='liblinear',  # liblinear, saga, lbfgs
             multi_class='auto',
             max_iter=10000,
-            random_state=random_seed,
-            n_jobs=-1
+            random_state=random_seed
         )
     elif classifier == "support-vector-machine":
         predictor = SVC(
@@ -65,7 +70,7 @@ def main(train_file, predict_file, classifier, output_error):
             random_state=random_seed
         )
     else:
-        print("Unsupported classifier (type) selected:", classifier)
+        print("Unsupported classifier (--type) selected:", classifier)
         exit(1)
 
     # train
@@ -77,7 +82,7 @@ def main(train_file, predict_file, classifier, output_error):
     pred_y = predictor.predict(pred_X)
 
     if output_error:
-        # score returns accuracy
+        # score() returns accuracy
         train_error = 1 - predictor.score(X, y)
         predict_error = 1 - predictor.score(pred_X, pred_y_gold)
         output_errors(classifier, train_error, predict_error)

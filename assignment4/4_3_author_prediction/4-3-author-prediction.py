@@ -25,16 +25,21 @@ except ImportError:
 
 
 # debug settings
+logging_enabled = False
 show_embedding_plot = False
 show_voronoi_plot = False
-# testing_filter = "--since='100 days'"
-testing_filter = None
+testing_filter = None  # "--since='100 days'"
 # configuration
 vectorizer_filename = "CountVectorizer.joblib"
 author_embeddings_filename = "AuthorEmbeddings.joblib"
 encoding = 'ascii'
 token_pattern = r'\w\w+'
 random_seed = 89715348
+
+
+def log(msg, *args):
+    if logging_enabled:
+        print(msg, *args, file=sys.stderr)
 
 
 def plot_embeddings(author_embeddings, authors, file_embeddings, filenames):
@@ -119,14 +124,14 @@ def read_file(filename):
         with open(filename, 'r', encoding=encoding) as file:
             return file.read()
     except UnicodeDecodeError:
-        print(filename, "is not encoded in", encoding, file=sys.stderr)
-        print("  Falling back to UTF-8 ...", file=sys.stderr)
+        log(filename, "is not encoded in", encoding)
+        log("  Falling back to UTF-8 ...")
         try:
             with open(filename, 'r', encoding="utf-8") as file:
                 return file.read()
-            print("  ...successful", file=sys.stderr)
+            log("  ...successful")
         except UnicodeDecodeError:
-            print("  ...failed. Skipping file.", file=sys.stderr)
+            log("  ...failed. Skipping file.")
             return
 
 
@@ -145,7 +150,7 @@ def load_changes():
     if testing_filter:
         command.append(testing_filter)
 
-    print("Running command:", " ".join(command), file=sys.stderr)
+    log("Running command:", " ".join(command))
     result = run_command(command, multiline_output=True, separator=commit_sep)
 
     git_exclude_prefixes = [
@@ -156,7 +161,7 @@ def load_changes():
         "@@", "@@@"
     ]
 
-    print("Received results, building dict", file=sys.stderr)
+    log("Received results, building dict")
     changes_per_author = {}
     for commit in result:
         if not commit:
@@ -174,7 +179,7 @@ def load_changes():
             changes_per_author[author] = []
         for line in lines:
             changes_per_author[author].append(line)
-    print("Dictionary created, authors:", len(changes_per_author), file=sys.stderr)
+    log("Dictionary created, authors:", len(changes_per_author))
     return changes_per_author
 
 
@@ -184,14 +189,14 @@ def init():
         os.path.exists(author_embeddings_filename)
     ):
         # load vectorizer and author embeddings from dump
-        print("Loading vectorizer and embeddings", file=sys.stderr)
+        log("Loading vectorizer and embeddings")
         vectorizer = load(vectorizer_filename)
         authors, author_embeddings = load(author_embeddings_filename)
     else:
         # build corpus
-        print("No existing vectorizer and embeddings found, creating new...", file=sys.stderr)
+        log("No existing vectorizer and embeddings found, creating new...")
         changes_per_author = load_changes()
-        print("Creating vectorizer and bag of words repr. for authors", file=sys.stderr)
+        log("Creating vectorizer and bag of words repr. for authors")
         authors = sorted(changes_per_author.keys())
         corpus = [
             "\n".join(changes_per_author[author])
@@ -205,10 +210,9 @@ def init():
         )
         author_embeddings = vectorizer.fit_transform(corpus).toarray()
         # dump vectorizer and author embeddings to file
-        print(
+        log(
             "Saving vectorizer and author vector representation to disk:",
-            vectorizer_filename, author_embeddings_filename,
-            file=sys.stderr
+            vectorizer_filename, author_embeddings_filename
         )
         dump(vectorizer, vectorizer_filename)
         dump((authors, author_embeddings), author_embeddings_filename)
@@ -229,15 +233,13 @@ def embed_with_tsne(author_vecs, file_vecs):
     author_embeddings = embeddings[:split_point]
     file_embeddings = embeddings[split_point:]
 
-    print(
+    log(
         "Using t-SNE to reduce dims of authors:",
-        author_vecs.shape, "-->", author_embeddings.shape,
-        file=sys.stderr
+        author_vecs.shape, "-->", author_embeddings.shape
     )
-    print(
+    log(
         "Using t-SNE to reduce dims of files:",
-        file_vecs.shape, "-->", file_embeddings.shape,
-        file=sys.stderr
+        file_vecs.shape, "-->", file_embeddings.shape
     )
     return author_embeddings, file_embeddings
 
@@ -270,13 +272,33 @@ def find_nearest_neighbors(voro, query_points):
     return np.array(neighbors)
 
 
+def read_stdin():
+    # guard against interactive mode
+    if sys.stdin.isatty():
+        print(
+            "This script does not support running it interactively " +
+            "(`stdin` is a TTY). " +
+            "Please use it with a pipe (`| *.py` or `*.py <`).",
+            file=sys.stderr
+        )
+        exit(1)
+
+    return [
+        line.strip()
+        for line
+        in sys.stdin
+    ]
+
+
 def main():
-    filenames = [line.strip() for line in sys.stdin]
+    filenames = read_stdin()
 
     # init phase
+    log("## Initialization phase")
     cv, authors, author_vecs = init()
 
     # query phase
+    log("## Query phase")
     file_contents = [read_file(f) for f in filenames]
     file_vecs = cv.transform(file_contents).toarray()
     author_embeddings, file_embeddings = embed_with_tsne(
@@ -286,18 +308,18 @@ def main():
     if show_embedding_plot:
         plot_embeddings(author_embeddings, authors, file_embeddings, filenames)
 
-    print("Building voronoi diagram", file=sys.stderr)
+    log("Building voronoi diagram")
     voro = Voronoi(
         author_embeddings,
         incremental=False
     )
-    print("Finding nearest neighbors", file=sys.stderr)
+    log("Finding nearest neighbors")
     neighbors = find_nearest_neighbors(voro, file_embeddings)
 
     if show_voronoi_plot:
         plot_voronoi_neighbors(voro, file_embeddings, neighbors)
 
-    print("Finished. Printing result to stdout", file=sys.stderr)
+    log("Finished. Printing result to stdout")
     for filename, neighbor in zip(filenames, neighbors):
         index = np.where(author_embeddings == neighbor)[0][0]
         author = authors[index]

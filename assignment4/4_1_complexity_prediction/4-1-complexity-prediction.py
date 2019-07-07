@@ -31,9 +31,6 @@ def read_features(filename, feature_names, predict_col=None):
     with open(filename, 'r', newline='') as file:
         reader = csv.DictReader(file, delimiter=';')
         keyname = reader.fieldnames[0]
-        #print("key:", keyname, file=sys.stderr)
-        #print("features:", feature_names, file=sys.stderr)
-        #print("predict:", predict_col, file=sys.stderr)
 
         for row in reader:
             keys.append(row[keyname])
@@ -68,18 +65,10 @@ def main(train_file, feature_names, predict_file, predict_col):
     # train
     _, X, y = read_features(train_file, feature_names, predict_col)
     predictor.fit(X, y)
-    train_y = predictor.predict(X)
-    print("train error:", predictor.score(X, y), file=sys.stderr)
 
     # predict
     keys, pred_X = read_features(predict_file, feature_names)
     pred_y = predictor.predict(pred_X)
-
-    print(
-        "prediction error (to assignment)",
-        predictor.score(pred_X, [33, 12, 17]),
-        file=sys.stderr
-    )
     print_output(keys, pred_y)
 
 
@@ -89,8 +78,9 @@ if __name__ == "__main__":
         help='path to the training dataset',
         required=True
     )
-    parser.add_argument('--train-columns',
+    parser.add_argument('--training-columns',
         help='select columns used as features (csv-string)',
+        dest='train_columns',
         required=True
     )
     parser.add_argument('--predict',
