@@ -5,6 +5,7 @@ import csv
 try:
     from sklearn.linear_model import LogisticRegression
     from sklearn.svm import SVC
+    from sklearn.gaussian_process.kernels import RBF
     import numpy as np
 except ImportError:
     print("ERROR - this script requires sklearn")
@@ -53,6 +54,12 @@ def output_predictions(y):
         print(value)
 
 
+def custom_kernel(sigma=0.5):
+    rbf = RBF()
+    expo = 1/(sigma**2)
+    return lambda X, Y: np.power(rbf(X, Y), expo)
+
+
 def main(train_file, predict_file, classifier, output_error):
     if classifier == "logistic-regression":
         predictor = LogisticRegression(
@@ -64,9 +71,10 @@ def main(train_file, predict_file, classifier, output_error):
         )
     elif classifier == "support-vector-machine":
         predictor = SVC(
-            kernel='rbf',  # synonym to 'gaussian'
+            kernel=custom_kernel(sigma=0.5),
+            # kernel='rbf',  # synonym to 'gaussian'
             C=1,
-            gamma=0.5,
+            gamma='auto',
             random_state=random_seed
         )
     else:
